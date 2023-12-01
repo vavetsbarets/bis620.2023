@@ -5,7 +5,7 @@
 
 <!-- badges: start -->
 
-[![R-CMD-check](https://github.com/kaneplusplus/bis620.2023/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/kaneplusplus/bis620.2023/actions/workflows/R-CMD-check.yaml)
+[![R-CMD-check](https://github.com/vavetsbarets/bis620.2023/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/vavetsbarets/bis620.2023/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 The goal of bis620.2023 is to …
@@ -17,7 +17,7 @@ You can install the development version of bis620.2023 from
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("kaneplusplus/bis620.2023")
+devtools::install_github("vavetsbarets/bis620.2023")
 ```
 
 ## Example
@@ -26,7 +26,7 @@ This is a basic example which shows you how to solve a common problem:
 
 ``` r
 library(bis620.2023)
-accel |> 
+DATASET |> 
   head(100) |> 
   plot_accel()
 ```

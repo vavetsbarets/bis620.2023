@@ -27,7 +27,7 @@ You can install the development version of bis620.2023 from [GitHub](https://git
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("kaneplusplus/bis620.2023")
+devtools::install_github("vavetsbarets/bis620.2023")
 ```
 
 ## Example
@@ -36,7 +36,7 @@ This is a basic example which shows you how to solve a common problem:
 
 ```{r example}
 library(bis620.2023)
-accel |> 
+DATASET |> 
   head(100) |> 
   plot_accel()
 ```
