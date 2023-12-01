@@ -9,7 +9,35 @@
 [![R-CMD-check](https://github.com/vavetsbarets/bis620.2023/actions/workflows/test-coverage.yaml/badge.svg)](https://github.com/vavetsbarets/bis620.2023/actions/workflows/test-coverage.yaml)
 <!-- badges: end -->
 
-The goal of bis620.2023 is to …
+## Description
+
+bis620.2023 contains the function which plots the spectral signature of
+the accelerometry data.
+
+At the same time the package contains the shiny app which performs the
+visual analysis of the clinical trials queried by the user. By running
+the R/app_project_final.R the user can:
+
+1.  open the app
+
+2.  filter the needed trials by the keyword
+
+3.  filter the trials by the Sponsor type
+
+4.  look at the distribution of the phase of the selected trials
+
+5.  observe the dynamics of the number of active trials on the relevant
+    period
+
+6.  analyse the conditions/diseases studied in the selected trials
+
+7.  look at the adverse events suffered by the subjects of the selected
+    trials
+
+8.  observe the geographical distribution of the trials conducted across
+    the world
+
+9.  analyse the detailedness of the selected trials
 
 ## Installation
 
