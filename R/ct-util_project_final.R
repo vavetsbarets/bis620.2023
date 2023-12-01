@@ -1,28 +1,18 @@
-library(dplyr)
-library(duckdb)
-library(dplyr)
-library(DBI)
-library(DT)
-library(ggplot2)
-library(tidyr)
-library(purrr)
-library(dbplyr)
-library(arrow)
-
-
 # #### PARSING THE DATA ####
 
-studies <- read_parquet(file.path("..", "data", "studies.parquet")) |> as_tibble()
-conditions <- read_parquet(file.path("..", "data", "conditions.parquet")) |> as_tibble()
-countries <- read_parquet(file.path("..", "data", "countries.parquet")) |> as_tibble()
-calculated_values <- read_parquet(file.path("..", "data", "calculated_values.parquet")) |> as_tibble()
-reported_events <- read_parquet(file.path("..", "data", "reported_events.parquet")) |> as_tibble()
+# studies <- read_parquet(file.path("..", "data", "studies.parquet")) |> as_tibble()
+# conditions <- read_parquet(file.path("..", "data", "conditions.parquet")) |> as_tibble()
+# countries <- read_parquet(file.path("..", "data", "countries.parquet")) |> as_tibble()
+# calculated_values <- read_parquet(file.path("..", "data", "calculated_values.parquet")) |> as_tibble()
+# reported_events <- read_parquet(file.path("..", "data", "reported_events.parquet")) |> as_tibble()
 
 
 
 # reading additional data for WORLD MAP FEATURE:
   # world data from package maps, to build a world map diagram!!!
 # it shows countries and corresponding geographical coordinates
+#' @importFrom ggplot2 map_data
+#' @import maps
 world_map <- map_data("world")
 # removing Antarctica for better visualization
 world_map <- subset(world_map, region!="Antarctica")
@@ -31,40 +21,15 @@ world_map <- subset(world_map, region!="Antarctica")
 
 ##### FUNCTIONS
 
-#### FUNCTIONS MADE IN CLASS ####
-
-#' @title Query keywords from a database table.
-#' @description build a SQL query from input keywords and filter the input dataset accordingly;
-#' returning void and filtering the duckDB input table
-#' @param d duckDB table, input dataset
-#' nxd where n is the number of the studies and d is the number of the features
-#' @param kwds character, the keywords to look for
-#' @param column the column to look for the keywords in
-#' @param ignore_case logical, TRUE if the case has to be ignored when searching for a keyword
-#' (default TRUE)
-#' @param match_all logical, TRUE if we should match ANY of the keywords (union),
-#' FALSE if we should match ALL of the keywords
-query_kwds <- function(d, kwds, column, ignore_case = TRUE, match_all = FALSE) {
-  kwds = kwds[kwds != ""]
-  kwds = paste0("%", kwds, "%") |>
-    gsub("'", "''", x = _)
-  if (ignore_case) {
-    like <- " ilike "
-  } else{
-    like <- " like "
-  }
-  query = paste(
-    paste0(column, like, "'", kwds, "'"),
-    collapse = ifelse(match_all, " AND ", " OR ")
-  )
-  filter(d, sql(query))
-}
-
 #'@title Gets the concurrent trials for each date
 #'@description Counts the concurrent trials for each date in the dataset then used to plot the concurrent plot;
 #'it returns a tibble `all_date` with a `date` column and a `count` of the number of concurrent trials at that date.
 #'@param d tibble/table/dataframe, table containing the studies and the starting and ending dates;
 #'nx2 where n is the number of filtered studies and 2 are the columns corresponding to the start and end date
+#'@importFrom dplyr rename arrange everything
+#'@importFrom purrr map_dbl
+#'@importFrom stats na.omit
+#'@export
 get_concurrent_trials = function(d) {
 
   # Get all of the unique dates.
@@ -103,6 +68,8 @@ get_concurrent_trials = function(d) {
 #'@param x table/tibble/data.frame, input dataset
 #'nxd where n is the number of filtered studies and d is the number of features, one column
 #'@param phases_all character, it is a vector storing all the possible unique values of "phase"
+#' @importFrom dplyr tibble
+#' @export
 plot_phase_histogram_new = function(x, phases_all) {
   x$phase[is.na(x$phase)] = "NA"
   x = x |>
@@ -140,13 +107,14 @@ plot_phase_histogram_new = function(x, phases_all) {
 #'dataset is updated, the has not no be changed;
 #'it returns a character vector `phase_all`
 #'@param studies duckDB table, input "studies" table
+#' @importFrom dplyr distinct
+#' @export
 get_all_phases <- function(studies){
 
   # getting unique phases of the whole table in the tibble format
   phases_all <- studies |>
     select(phase) |>
-    distinct() |>
-    collect()
+    distinct()
 
   # replace NA onto "NA"
   phases_all$phase[is.na(phases_all$phase)] = "NA"
@@ -171,12 +139,16 @@ get_all_phases <- function(studies){
 #'@param conditions_duckdb duckDB table, input `conditions` table
 #'which is defined at the very beginning of this file. It is
 #'enough to give as an input `conditions` table with the columns `nct_id` and `names` only
+#' @importFrom dplyr arrange summarize group_by left_join desc
+#' @importFrom ggplot2 geom_col xlab ylab theme_bw labs theme element_text
+#' @importFrom stats reorder
+#' @importFrom utils head
+#' @export
 plot_conditions <- function(studies_tibble, conditions_duckdb){
 
   # converting conditions_duckdb to tibble, so that we can join it with studies_tibble
   conditions_tibble <- conditions_duckdb |>
-    select(nct_id, name) |>
-    collect()
+    select(nct_id, name)
 
   # joining conditions and studies and plotting at most top 10 the most frequent conditions
   left_join(studies_tibble, conditions_tibble, by = 'nct_id') |>
@@ -222,6 +194,10 @@ plot_conditions <- function(studies_tibble, conditions_duckdb){
 #'@param reported_events table/tibble/data.frame, input `reported_events` table
 #'nxd where n is the number of filtered studies and d is the number of features, it is
 #'enough to give as an input `reported_events` with the columns `nct_id`, `organ_system` and `event_type`
+#' @importFrom dplyr right_join collect filter summarise group_by ungroup
+#' @importFrom ggplot2 geom_bar coord_flip labs xlab ylab theme element_text
+#' @importFrom utils head
+#' @export
 plot_adverse_events <- function(studies, reported_events){
 
   # right join since we want to match all the selected `studies` with the multiple rows
@@ -308,6 +284,9 @@ plot_adverse_events <- function(studies, reported_events){
 #'enough to give as an input `countries` table with the columns `nct_id` and `name` only
 #'@param world_map data.frame, input `world_map` data.frame, which is defined at
 #'the very beginning of this file. This data.frame is needed to build a world map using geom_map
+#' @import maps
+#' @importFrom ggplot2 geom_map scale_fill_gradient expand_limits
+#' @export
 plot_world_map <- function(studies_filt, countries_duckdb, world_map){
 
   # creating and collecting tibble, so that it can be joined with the studies_filt
@@ -387,7 +366,7 @@ plot_world_map <- function(studies_filt, countries_duckdb, world_map){
   title_world_map <- paste('World map. Trials with missing data:', data_missing_count)
   ggplot(countries_counts) +
     geom_map(
-      dat = world_map, map = world_map, aes(map_id = region),
+      data = world_map, map = world_map, aes(map_id = region),
       fill = "white", color = "#7f7f7f", size = 0.25
     ) +
     geom_map(map = world_map, aes(map_id = name, fill = log(n, 10)), linewidth = 0.25) +
@@ -422,6 +401,10 @@ plot_world_map <- function(studies_filt, countries_duckdb, world_map){
 #'enough to give as an input `calculated_values` table with the columns `nct_id`,
 #' `number_of_primary_outcomes_to_measure`, `number_of_secondary_outcomes_to_measure` and
 #' `number_of_other_outcomes_to_measure` only
+#' @importFrom dplyr mutate across where
+#' @importFrom tidyr replace_na
+#' @importFrom ggplot2 geom_point
+#' @export
 plot_detailedness <- function(studies_filt, calculated_values){
   # getting the number of total outcomes for each trial
     # by summing up the number of primary, secondary and other outcomes

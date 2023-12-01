@@ -1,1 +1,10 @@
-utils::globalVariables(c("X", "Y", "Z", "Acceleration"))
+utils::globalVariables(c("X", "Y", "Z", "Acceleration",
+                         "phase", "name", "value", "event_type",
+                         "organ_system", "nct_id", "n",
+                         "number_of_primary_outcomes_to_measure",
+                         "number_of_secondary_outcomes_to_measure",
+                         "number_of_other_outcomes_to_measure",
+                         "total_outcomes", "enrollment", "source_class",
+                         "region", "studies", "brief_title", "source_class",
+                         "start_date", "completion_date", "count",
+                         "conditions", "reported_events", "countries", "calculated_values"))
