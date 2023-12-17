@@ -1,0 +1,19 @@
+---
+title: "BIS620-final-project"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{BIS620-final-project}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(bis620.2023)
+```

@@ -4,7 +4,7 @@
     <loc>/404.html</loc>
   </url>
   <url>
-    <loc>/LICENSE.html</loc>
+    <loc>/articles/BIS620-final-project.html</loc>
   </url>
   <url>
     <loc>/articles/index.html</loc>
@@ -19,7 +19,25 @@
     <loc>/index.html</loc>
   </url>
   <url>
+    <loc>/LICENSE.html</loc>
+  </url>
+  <url>
     <loc>/reference/accel.html</loc>
+  </url>
+  <url>
+    <loc>/reference/calculated_values.html</loc>
+  </url>
+  <url>
+    <loc>/reference/conditions.html</loc>
+  </url>
+  <url>
+    <loc>/reference/countries.html</loc>
+  </url>
+  <url>
+    <loc>/reference/get_all_phases.html</loc>
+  </url>
+  <url>
+    <loc>/reference/get_concurrent_trials.html</loc>
   </url>
   <url>
     <loc>/reference/hello.html</loc>
@@ -31,6 +49,27 @@
     <loc>/reference/plot_accel.html</loc>
   </url>
   <url>
+    <loc>/reference/plot_adverse_events.html</loc>
+  </url>
+  <url>
+    <loc>/reference/plot_conditions.html</loc>
+  </url>
+  <url>
+    <loc>/reference/plot_detailedness.html</loc>
+  </url>
+  <url>
+    <loc>/reference/plot_phase_histogram_new.html</loc>
+  </url>
+  <url>
+    <loc>/reference/plot_world_map.html</loc>
+  </url>
+  <url>
+    <loc>/reference/reported_events.html</loc>
+  </url>
+  <url>
     <loc>/reference/spectral_signature.html</loc>
+  </url>
+  <url>
+    <loc>/reference/studies.html</loc>
   </url>
 </urlset>
