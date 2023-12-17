@@ -7,6 +7,13 @@
 #    http://shiny.rstudio.com/
 #
 
+# IMPORT bis620.2023 before running this file!!!!
+  # BUT FIRST USE install() of this package from devtools package to install this package on out machine
+  # (not only on our environment), as an actual package!!!
+  # Do install() every time you change the package to have an updated version of the package on your machine!!!
+  # Note, for some reason, you have to import (library) all the packages used in bis620.2023 to run this file.
+  # The other packages are not imported automatically with the bis620.2023 for some reason!!!!
+
 library(shiny)
 
 # Steps to adding a feature:
@@ -21,7 +28,7 @@ library(shiny)
 
 
 # # sourcing all the functions and variables from ct file
-# load_all("R/ct-util_project_final.R")
+#source("R/ct-util_project_final.R")
 
 # adding maximum number of observations to collect for the query
 max_num_studies = 1000

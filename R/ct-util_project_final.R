@@ -1,16 +1,21 @@
-# #### PARSING THE DATA ####
 
-# studies <- read_parquet(file.path("..", "data", "studies.parquet")) |> as_tibble()
-# conditions <- read_parquet(file.path("..", "data", "conditions.parquet")) |> as_tibble()
-# countries <- read_parquet(file.path("..", "data", "countries.parquet")) |> as_tibble()
-# calculated_values <- read_parquet(file.path("..", "data", "calculated_values.parquet")) |> as_tibble()
-# reported_events <- read_parquet(file.path("..", "data", "reported_events.parquet")) |> as_tibble()
+
+# #### PARSING THE DATA ####
+# library(tibble)
+# library(arrow)
+# studies <- read_parquet(file.path("..", "data-raw", "studies.parquet")) |> as_tibble()
+# conditions <- read_parquet(file.path("..", "data-raw", "conditions.parquet")) |> as_tibble()
+# countries <- read_parquet(file.path("..", "data-raw", "countries.parquet")) |> as_tibble()
+# calculated_values <- read_parquet(file.path("..", "data-raw", "calculated_values.parquet")) |> as_tibble()
+# reported_events <- read_parquet(file.path("..", "data-raw", "reported_events.parquet")) |> as_tibble()
 
 
 
 # reading additional data for WORLD MAP FEATURE:
   # world data from package maps, to build a world map diagram!!!
 # it shows countries and corresponding geographical coordinates
+library(ggplot2)
+library(maps)
 #' @importFrom ggplot2 map_data
 #' @import maps
 world_map <- map_data("world")
