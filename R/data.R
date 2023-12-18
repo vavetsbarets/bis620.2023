@@ -52,3 +52,13 @@
 "reported_events"
 
 
+#' counties Data from social vulnerability data
+#'
+#' processed data for the final project
+#'
+#' @format ## `counties`
+#' A special sf dataframe which contains counties information and geographical
+#' coordinates of it stored in a geometry format
+"counties"
+
+

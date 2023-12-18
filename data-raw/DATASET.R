@@ -20,3 +20,7 @@ usethis::use_data(calculated_values, overwrite = TRUE)
 
 reported_events <- read_parquet(file.path("..", "data-raw", "reported_events.parquet")) |> as_tibble()
 usethis::use_data(reported_events, overwrite = TRUE)
+
+library(sf)
+counties <- read_sf(file.path("..", "data-raw", "SVI2018_US_tract_modified.shp"))
+usethis::use_data(counties, overwrite = TRUE)

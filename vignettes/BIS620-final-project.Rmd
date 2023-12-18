@@ -15,5 +15,88 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup}
+# importing all the needed libraries
+library(readr)
+library(dplyr)
+library(sf)
+sf_use_s2(FALSE)
+library(ggplot2)
+# changing the color palette!!!
+library(viridis) # for scale_fill_viridis()
 library(bis620.2023)
 ```
+
+
+```{r}
+counties$STATE <- gsub(" ", "_", counties$STATE)
+
+counties$centr_coord <- counties$geometry |> st_centroid()
+
+counties$unemployment_rate <- counties$unemp / counties$pop * 100
+counties_flt <- counties |> 
+  filter(STATE %in% c('CALIFORNIA', 'ARIZONA', 'NEVADA', 'UTAH', 'COLORADO', 'NEW_MEXICO'))
+
+p1 <- geographical_visualizer(counties_flt, 'unemployment_rate')
+p1
+
+states <- counties |> 
+  select(STATE, unemp, pop) |> 
+  group_by(STATE) |> 
+  summarize(unemp = sum(unemp), pop = sum(pop))
+
+states$unemployment_rate <- states$unemp / states$pop * 100
+
+p2 <- geographical_visualizer(states |> filter(!(STATE %in% c('ALASKA', 'HAWAII'))), 
+                              'unemployment_rate')
+p2
+
+counties_features <- feature_extraction(counties) |> 
+  st_drop_geometry() |> 
+  select(-centr_coord)
+
+counties_features |> head(10)
+
+max(counties_features$unemp / counties_features$pop)
+
+
+df_model <- transformation_modeling(counties_features)
+df_model |> head(10)
+
+sapply(df_model[1:51], max)
+
+
+
+df_model$unemp_rate_centered <- df_model$unemployment_rate - df_model$avg_state_unemp
+
+# model1
+states <- df_model$STATE |> unique()
+X_cols_model1 <- colnames(as.data.frame(df_model) |> select(-c(STATE, unemployment_rate)))[1:100]
+y_col_model1 <- "unemployment_rate"
+X_cols_model2 <- colnames(df_model)[1:49]
+y_col_model2 <- "unemp_rate_centered"
+
+# model1
+fs_df1 <- forward_selection_linreg(df_model, X_cols_model1, y_col_model1)
+fs_df1 
+
+argmin_ind1 <- which.min(fs_df1$aic)
+argmin_ind1
+
+formula1fs <- paste(sort(fs_df1$var[2:argmin_ind1]), collapse = " + ")
+formula1fs <- paste(y_col_model1, '~', formula1fs)
+model1fs <- lm(formula1fs, data = df_model)
+summary(model1fs)
+
+# model2
+fs_df2 <- forward_selection_linreg(df_model, X_cols_model2, y_col_model2)
+fs_df2
+
+argmin_ind2 <- which.min(fs_df2$aic)
+argmin_ind2
+
+formula2fs <- paste(sort(fs_df2$var[2:argmin_ind2]), collapse = " + ")
+formula2fs <- paste(y_col_model2, '~', formula2fs)
+model2fs <- lm(formula2fs, data = df_model)
+summary(model2fs)
+```
+

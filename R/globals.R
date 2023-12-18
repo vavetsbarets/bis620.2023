@@ -7,4 +7,5 @@ utils::globalVariables(c("X", "Y", "Z", "Acceleration",
                          "total_outcomes", "enrollment", "source_class",
                          "region", "studies", "brief_title", "source_class",
                          "start_date", "completion_date", "count",
-                         "conditions", "reported_events", "countries", "calculated_values"))
+                         "conditions", "reported_events", "countries", "calculated_values",
+                         "counties", "STATE", "geometry", "unemployment_rate"))

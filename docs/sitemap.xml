@@ -31,7 +31,19 @@
     <loc>/reference/conditions.html</loc>
   </url>
   <url>
+    <loc>/reference/counties.html</loc>
+  </url>
+  <url>
     <loc>/reference/countries.html</loc>
+  </url>
+  <url>
+    <loc>/reference/feature_extraction.html</loc>
+  </url>
+  <url>
+    <loc>/reference/forward_selection_linreg.html</loc>
+  </url>
+  <url>
+    <loc>/reference/geographical_visualizer.html</loc>
   </url>
   <url>
     <loc>/reference/get_all_phases.html</loc>
@@ -71,5 +83,8 @@
   </url>
   <url>
     <loc>/reference/studies.html</loc>
+  </url>
+  <url>
+    <loc>/reference/transformation_modeling.html</loc>
   </url>
 </urlset>

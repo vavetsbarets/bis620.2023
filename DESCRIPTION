@@ -1,10 +1,10 @@
 Package: bis620.2023
 Type: Package
-Title: Homework 3: Functions and Data for the BIS620 (2023) Class and midterm project
+Title: Final project, Homework 3 and midterm project added to BIS620.2023 package created in class
 Version: 0.1.0
 Author: Vladimir Averin
 Maintainer: The package maintainer <v.s.averin26@gmail.com>
-Description: Functions and data captured for class and files from the midterm project.
+Description: Functions and data captured for class and files of the midterm project, HW3 and final project.
 License: GPL (>= 2)
 Encoding: UTF-8
 LazyData: true
@@ -17,7 +17,9 @@ Imports:
   purrr,
   tidyr, 
   shiny, 
-  maps
+  maps,
+  sf, 
+  viridis
 Suggests: 
     knitr,
     rmarkdown,
