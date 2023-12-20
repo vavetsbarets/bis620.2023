@@ -15,88 +15,156 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup}
-# importing all the needed libraries
-library(readr)
+# importing the created package
+library(bis620.2023)
+
+# importing all the other needed libraries
 library(dplyr)
 library(sf)
 sf_use_s2(FALSE)
 library(ggplot2)
-# changing the color palette!!!
-library(viridis) # for scale_fill_viridis()
-library(bis620.2023)
+library(viridis) 
 ```
 
 
+# BIS620 final project
+
+## Interstate mutual impact of unemployment in the US
+
+### Vladimir Averin
+
+## Background and motivation
+
+Unemployment is a key factor which measures the social welfare and prosperity. At the same time, this measure is a key component of the monetary policy in the US. The US targets inflation, so the inflation spikes are usually are cured by raising the key rate. However, increase in the key rate tend to raise the unemployment, thus the US carefully analyses the dynamics of unemployment in order not to cause a spike in unemployment by conducting a contractionary monetary policy. This motivated me to study the US unemployment data. 
+
+Social vulnerability data provides a detailed US census data split by FIPS. I was motivated to work with the spatial data and analyse unemployment using such data. I was also interested in analysing the geographical dynamics of the unemployment. Specifically, whether the unemployment in some region can be affected by neighboring states or unemployment is more or less stable throughout the whole state with some state-specific mean value. So I set the goal of determining whether there is an impact of state on each other's unemployment rates. 
+
+## Research question
+
+There are many ways to estimate how the states affect the unemployment in the other areas. Given that the have cross-sectional data (we could have at most the panel data with just several years which may not be enough for the panel data analysis), I came up with the idea to split the states onto counties and assume that the closer some county of the state to some other state, the more impact this other state should have on this county. Thus, inside some state I can compare the unemployment of the counties far away from this other state with the rates of the counties close to this other state and suggest the average difference in the unemployment rate between these two groups of counties is associated with the effect of this other state. 
+
+Thus, the broad research question is whether the states affect the unemployment in the other states. The more specific research question relevant to my work is whether the proximity to some state affects the unemployment rate. 
+
+## Plan 
+
+In this work I plan to estimate the effect of all states on each county. Thus, I need the unemployment data on a county level. This is provided by the social vulnerability data. At the same time to do my analysis I need to calculate the distance of each county of the US to each state of the US. I am going to use geometry (coordinate) information provided by the social vulnerability data. In the next section I am going to provide in detail how I constructed the dataset for the modelling.
+
+## Data cleaning and exploration
+
+### Initial preprocessing and creating the package dataset
+
+In this section I am going to explain how I used initial social vulnerability data we used in class to create my final modelling dataset. 
+
+First of all, I want to note that the initial dataset is too large to be deployed in Github so I first did some preprocessing to this data, saved preprocessed data and then I used this preprocessed data as the package dataset. You can see the preprocessing code below which I don't run as I didn't save the initial SVI2018_US_tract.shp data in the package due to its large memory (I cannot store such large files in GitHub). 
+
 ```{r}
+# d_county <- read_sf(file.path("2018-data", "SVI2018_US_tract.shp")) |>
+#   mutate_if(is.numeric, ~ if_else(.x == -999, NA, .x)) |> 
+#   select(STATE, COUNTY, E_TOTPOP, E_UNEMP) |> 
+#   # no information about unemployment in Rio Arriba county, New Mexico
+#     # deleting this county from analysis
+#   filter(!is.na(E_UNEMP)) |> 
+#   group_by(STATE, COUNTY) |> 
+#   summarize(unemp = sum(E_UNEMP, na.rm = TRUE), pop = sum(E_TOTPOP, na.rm = TRUE))
+# 
+# st_write(d_county, "SVI2018_US_tract_modified.shp")
+```
+
+We can see that I first replaced -999 onto NA as we did in class as initially NA values were marked as -999. Then I selected only needed variables for the further analysis: that is the information about state, county, total population and total number of unemployed people for each FIPS. Note that I also keep geometry column. As this is sf data frame, geometry column is saved automatically, I don't need to select it every time. Then I deleted one county Rio Arriba from the analysis because the data for this county was completely missing (in fact, the data was missing only in this county). The initial SVI2018_US_tract.shp has the information on the FIPS level, but I think that single FIPS are too small for the analysis (very large margin of errors for the unemployment estimates). Thus, I decided to use county-level data, so I grouped all the data by county. Finally, I saved the resulted dataset in a file **SVI2018_US_tract_modified.shp** and I made such dataset to be the package dataset and named it **counties**.
+
+### Further cleaning and initial visualization
+
+```{r}
+# replacing the spaces with _ for the convenience
 counties$STATE <- gsub(" ", "_", counties$STATE)
 
-counties$centr_coord <- counties$geometry |> st_centroid()
-
-counties$unemployment_rate <- counties$unemp / counties$pop * 100
-counties_flt <- counties |> 
-  filter(STATE %in% c('CALIFORNIA', 'ARIZONA', 'NEVADA', 'UTAH', 'COLORADO', 'NEW_MEXICO'))
-
-p1 <- geographical_visualizer(counties_flt, 'unemployment_rate')
-p1
-
-states <- counties |> 
-  select(STATE, unemp, pop) |> 
-  group_by(STATE) |> 
+states <- counties |>
+  select(STATE, unemp, pop) |>
+  group_by(STATE) |>
   summarize(unemp = sum(unemp), pop = sum(pop))
 
 states$unemployment_rate <- states$unemp / states$pop * 100
 
-p2 <- geographical_visualizer(states |> filter(!(STATE %in% c('ALASKA', 'HAWAII'))), 
+p2 <- geographical_visualizer(states |> filter(!(STATE %in% c('ALASKA', 'HAWAII'))),
                               'unemployment_rate')
 p2
-
-counties_features <- feature_extraction(counties) |> 
-  st_drop_geometry() |> 
-  select(-centr_coord)
-
-counties_features |> head(10)
-
-max(counties_features$unemp / counties_features$pop)
+```
 
 
-df_model <- transformation_modeling(counties_features)
-df_model |> head(10)
+## Analysis
 
-sapply(df_model[1:51], max)
+## Interpretation and conclusions
 
-
-
-df_model$unemp_rate_centered <- df_model$unemployment_rate - df_model$avg_state_unemp
-
-# model1
-states <- df_model$STATE |> unique()
-X_cols_model1 <- colnames(as.data.frame(df_model) |> select(-c(STATE, unemployment_rate)))[1:100]
-y_col_model1 <- "unemployment_rate"
-X_cols_model2 <- colnames(df_model)[1:49]
-y_col_model2 <- "unemp_rate_centered"
-
-# model1
-fs_df1 <- forward_selection_linreg(df_model, X_cols_model1, y_col_model1)
-fs_df1 
-
-argmin_ind1 <- which.min(fs_df1$aic)
-argmin_ind1
-
-formula1fs <- paste(sort(fs_df1$var[2:argmin_ind1]), collapse = " + ")
-formula1fs <- paste(y_col_model1, '~', formula1fs)
-model1fs <- lm(formula1fs, data = df_model)
-summary(model1fs)
-
-# model2
-fs_df2 <- forward_selection_linreg(df_model, X_cols_model2, y_col_model2)
-fs_df2
-
-argmin_ind2 <- which.min(fs_df2$aic)
-argmin_ind2
-
-formula2fs <- paste(sort(fs_df2$var[2:argmin_ind2]), collapse = " + ")
-formula2fs <- paste(y_col_model2, '~', formula2fs)
-model2fs <- lm(formula2fs, data = df_model)
-summary(model2fs)
+```{r}
+# counties$STATE <- gsub(" ", "_", counties$STATE)
+# 
+# counties$centr_coord <- counties$geometry |> st_centroid()
+# 
+# counties$unemployment_rate <- counties$unemp / counties$pop * 100
+# counties_flt <- counties |> 
+#   filter(STATE %in% c('CALIFORNIA', 'ARIZONA', 'NEVADA', 'UTAH', 'COLORADO', 'NEW_MEXICO'))
+# 
+# p1 <- geographical_visualizer(counties_flt, 'unemployment_rate')
+# p1
+# 
+# states <- counties |> 
+#   select(STATE, unemp, pop) |> 
+#   group_by(STATE) |> 
+#   summarize(unemp = sum(unemp), pop = sum(pop))
+# 
+# states$unemployment_rate <- states$unemp / states$pop * 100
+# 
+# p2 <- geographical_visualizer(states |> filter(!(STATE %in% c('ALASKA', 'HAWAII'))), 
+#                               'unemployment_rate')
+# p2
+# 
+# counties_features <- feature_extraction(counties) |> 
+#   st_drop_geometry() |> 
+#   select(-centr_coord)
+# 
+# counties_features |> head(10)
+# 
+# max(counties_features$unemp / counties_features$pop)
+# 
+# 
+# df_model <- transformation_modeling(counties_features)
+# df_model |> head(10)
+# 
+# sapply(df_model[1:51], max)
+# 
+# 
+# 
+# df_model$unemp_rate_centered <- df_model$unemployment_rate - df_model$avg_state_unemp
+# 
+# # model1
+# states <- df_model$STATE |> unique()
+# X_cols_model1 <- colnames(as.data.frame(df_model) |> select(-c(STATE, unemployment_rate)))[1:100]
+# y_col_model1 <- "unemployment_rate"
+# X_cols_model2 <- colnames(df_model)[1:49]
+# y_col_model2 <- "unemp_rate_centered"
+# 
+# # model1
+# fs_df1 <- forward_selection_linreg(df_model, X_cols_model1, y_col_model1)
+# fs_df1 
+# 
+# argmin_ind1 <- which.min(fs_df1$aic)
+# argmin_ind1
+# 
+# formula1fs <- paste(sort(fs_df1$var[2:argmin_ind1]), collapse = " + ")
+# formula1fs <- paste(y_col_model1, '~', formula1fs)
+# model1fs <- lm(formula1fs, data = df_model)
+# summary(model1fs)
+# 
+# # model2
+# fs_df2 <- forward_selection_linreg(df_model, X_cols_model2, y_col_model2)
+# fs_df2
+# 
+# argmin_ind2 <- which.min(fs_df2$aic)
+# argmin_ind2
+# 
+# formula2fs <- paste(sort(fs_df2$var[2:argmin_ind2]), collapse = " + ")
+# formula2fs <- paste(y_col_model2, '~', formula2fs)
+# model2fs <- lm(formula2fs, data = df_model)
+# summary(model2fs)
 ```
 
