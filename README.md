@@ -9,11 +9,11 @@
 [![R-CMD-check](https://github.com/vavetsbarets/bis620.2023/actions/workflows/test-coverage.yaml/badge.svg)](https://github.com/vavetsbarets/bis620.2023/actions/workflows/test-coverage.yaml)
 <!-- badges: end -->
 
-## Final project
+# Final project BIS620, Vladimir Averin
 
 To access the vignette, click the link (in the about section on the
 right side) to the webpage. On the webpage open BIS620-final-project
-article which the vignette for the final project
+article which is the vignette for the final project
 
 ## Midterm project Description
 
