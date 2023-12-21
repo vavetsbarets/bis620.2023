@@ -9,7 +9,13 @@
 [![R-CMD-check](https://github.com/vavetsbarets/bis620.2023/actions/workflows/test-coverage.yaml/badge.svg)](https://github.com/vavetsbarets/bis620.2023/actions/workflows/test-coverage.yaml)
 <!-- badges: end -->
 
-## Description
+## Final project
+
+To access the vignette, click the link (in the about section on the
+right side) to the webpage. On the webpage open BIS620-final-project
+article which the vignette for the final project
+
+## Midterm project Description
 
 bis620.2023 contains the function which plots the spectral signature of
 the accelerometry data.
@@ -55,7 +61,7 @@ This is a basic example which shows you how to solve a common problem:
 
 ``` r
 library(bis620.2023)
-DATASET |> 
+accel |> 
   head(100) |> 
   plot_accel()
 ```

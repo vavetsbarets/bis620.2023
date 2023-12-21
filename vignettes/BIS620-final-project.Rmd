@@ -78,93 +78,180 @@ We can see that I first replaced -999 onto NA as we did in class as initially NA
 # replacing the spaces with _ for the convenience
 counties$STATE <- gsub(" ", "_", counties$STATE)
 
+# state-level data
 states <- counties |>
   select(STATE, unemp, pop) |>
   group_by(STATE) |>
   summarize(unemp = sum(unemp), pop = sum(pop))
 
+# unemployment rate for each state
 states$unemployment_rate <- states$unemp / states$pop * 100
 
+# vizualization of the unemployment of the state-level
 p2 <- geographical_visualizer(states |> filter(!(STATE %in% c('ALASKA', 'HAWAII'))),
                               'unemployment_rate')
 p2
 ```
 
+Let's do some Exploratory data analysis. On the state-level, we can observe (figure above) that unemployment rate is quite stable ranging from 1.5 to 4%. In general the unemployment is slightly lower in the center-north states of the US. In general, the change in unemployment between neighbouring states is quite smooth. So we may obtain the results that there are some effect of states on the unemployment of the other states in our models. The unemployment in Utah seems to be unexpectedly much lower than in the neighboring states. I will make are more detailed analysis of this region later on. 
+
+Note, the function geographical_vizualizer() is the function of the package bis620.2023. 
+
+```{r}
+# county-level analysis
+boxplot(counties$unemp / counties$pop * 100)
+
+# percentage of outliers counties
+dim(counties[counties$unemp / counties$pop > 0.05, ])[1] / dim(counties)[1] * 100
+```
+
+As for the counties, the range is more or less the similar (considering that there are 3000 counties VS 51 states, so slightly wider range is natural). There are some outliers (2.5%), but it's also kinda natural for such variable bounded below. 
+
+```{r}
+# 51 states, not 50!!!
+counties$STATE |> unique()
+```
+
+Note, there are 51 states in the data, not 50. Because for some reason the District of Columbia marked as the separate state. I decided not to change that.
+
+### Feature extraction for the model
+
+Now it's time to add distances between each county and each state to the data. I am going to find these distances using the coordinates. Specifically, I am going to find the distance between a county i (from state k) and some other state j in the following way: 
+1) find a center point of the county i using st_centroid() function applied to the geometry
+2) Split the state j onto counties and find the center point of each county like I did in 1) 
+3) Calculate distances between center point of county i and each county of state j
+4) Choose the smallest distance. This smallest distance will be treated as the distance between a county i and state j. 
+
+The function feature_extraction() of the bis620.2023 calculates the distance to every state for each county of the US. I am going to call it below
+
+```{r}
+# adding the coordinate of the center of the county for each county
+counties$centr_coord <- counties$geometry |> st_centroid()
+
+# adding unemployment rate for each county
+counties$unemployment_rate <- counties$unemp / counties$pop * 100
+
+# applyting feature_extraction() function and removing all 
+  # geometry columns with coordinate (we don't needed them for the modelling anymore)
+counties_features <- feature_extraction(counties) |>
+  st_drop_geometry() |>
+  select(-centr_coord)
+
+# observing the updated dataset
+counties_features |> head(7)
+```
+
+So now for each county in the US we have variables dist_to_ALABAMA, dist_to_ALASKA, ..., dist_to_WYOMING, which indicate the distance to the specified state in meters. 
+
+### Preparing y and X for the modelling
+
+As for the y variable it is unemployment rate (or centered unemployment rate), so not so many transformation needed. As for the X variables, I propose some transformations for the better fit of models and interpretation which are not easy to understand at first glance. In fact, I am going to introduce the proximity variable **proximity_to_STATE** (where STATE is any of the 51 states) defined as: 
+$$
+proximity\_to\_STATE = log(300001) - log(1 + min(distance\_to\_STATE, 300000))
+$$
+What is the interpretation of such variable? First of all, if the distance is more than 300 km or more, I consider this distance is 'not close at all' so proximity is zero. If the distance is less than 300 km, then the proximity variable is positive and the distance is zero then the proximity is maximum = log(300001). Note that I included the log transformation as I believe that the constant effect of % change is more likely than the constant effect of absolute value change (i.e change in unemployment if distance changes from 20 to 40 is likely to match the change in unemployment if distance changes from 200 to 400 rather than match the change if distance changes from 200 to 220). Then the last part is minus sign. This is for interpretation and making proximity the variable such that the bigger it is the bigger the rate of proximity (i.e. the closer the objects) are. 
+
+Note that if the county is in the state, for example, ALABAMA, then proximity_to_ALABAMA is set to 0. This is done to separate the effect of other states and the effect of the state in which the county is in. The effect of the "home state" will be accounted for by creating a dummy variable or by subtracting the mean unemployment of the state from the unemployment of the county.
+
+The function transformation_modeling() of the bis620.2023 package replaces distance_to_STATE variables onto proximity_to_STATE variables and additionally adds the dummy variable for each state (will be helpful in the modeling).
+
+
+```{r}
+# generating features for X
+df_model <- transformation_modeling(counties_features)
+df_model |> head(7)
+```
+
+In addition to that I am adding another variable which will be useful in modelling
+```{r}
+df_model$unemp_rate_centered <- df_model$unemployment_rate - df_model$avg_state_unemp
+```
+
+Now df_model has all the variables for the modelling
 
 ## Analysis
 
-## Interpretation and conclusions
+Now let us move on to the modelling. I am going to propose two versions of the linear models. In each of the models the proximity variables will be present. Note that the significant coefficient to the proximity variable indicates that the proximity to some other states is associated with the unemployment, so we can propose the hypothesis that some other state affect the unemployment in the other state by being close to some counties of the state. 
+
+So let's define and fit such models. In model 1 y variable is unemployment_rate and X variables are all proximity variables and state dummy variables. In model 2 y variable is unemp_rate_centered and X variable are all proximity variables and constant. Note that the final versions of the model will contain only selected variables. The variables will selected using forward selection and using AIC metric. In both cases the null model will be y ~ 1. Note the forward selection is done by forward_selection_linreg function of the package bis620.2023. Now let's fit both these models. 
 
 ```{r}
-# counties$STATE <- gsub(" ", "_", counties$STATE)
-# 
-# counties$centr_coord <- counties$geometry |> st_centroid()
-# 
-# counties$unemployment_rate <- counties$unemp / counties$pop * 100
-# counties_flt <- counties |> 
-#   filter(STATE %in% c('CALIFORNIA', 'ARIZONA', 'NEVADA', 'UTAH', 'COLORADO', 'NEW_MEXICO'))
-# 
-# p1 <- geographical_visualizer(counties_flt, 'unemployment_rate')
-# p1
-# 
-# states <- counties |> 
-#   select(STATE, unemp, pop) |> 
-#   group_by(STATE) |> 
-#   summarize(unemp = sum(unemp), pop = sum(pop))
-# 
-# states$unemployment_rate <- states$unemp / states$pop * 100
-# 
-# p2 <- geographical_visualizer(states |> filter(!(STATE %in% c('ALASKA', 'HAWAII'))), 
-#                               'unemployment_rate')
-# p2
-# 
-# counties_features <- feature_extraction(counties) |> 
-#   st_drop_geometry() |> 
-#   select(-centr_coord)
-# 
-# counties_features |> head(10)
-# 
-# max(counties_features$unemp / counties_features$pop)
-# 
-# 
-# df_model <- transformation_modeling(counties_features)
-# df_model |> head(10)
-# 
-# sapply(df_model[1:51], max)
-# 
-# 
-# 
-# df_model$unemp_rate_centered <- df_model$unemployment_rate - df_model$avg_state_unemp
-# 
-# # model1
-# states <- df_model$STATE |> unique()
-# X_cols_model1 <- colnames(as.data.frame(df_model) |> select(-c(STATE, unemployment_rate)))[1:100]
-# y_col_model1 <- "unemployment_rate"
-# X_cols_model2 <- colnames(df_model)[1:49]
-# y_col_model2 <- "unemp_rate_centered"
-# 
-# # model1
-# fs_df1 <- forward_selection_linreg(df_model, X_cols_model1, y_col_model1)
-# fs_df1 
-# 
-# argmin_ind1 <- which.min(fs_df1$aic)
-# argmin_ind1
-# 
-# formula1fs <- paste(sort(fs_df1$var[2:argmin_ind1]), collapse = " + ")
-# formula1fs <- paste(y_col_model1, '~', formula1fs)
-# model1fs <- lm(formula1fs, data = df_model)
-# summary(model1fs)
-# 
-# # model2
-# fs_df2 <- forward_selection_linreg(df_model, X_cols_model2, y_col_model2)
-# fs_df2
-# 
-# argmin_ind2 <- which.min(fs_df2$aic)
-# argmin_ind2
-# 
-# formula2fs <- paste(sort(fs_df2$var[2:argmin_ind2]), collapse = " + ")
-# formula2fs <- paste(y_col_model2, '~', formula2fs)
-# model2fs <- lm(formula2fs, data = df_model)
-# summary(model2fs)
+# defining X and y variables for the models
+X_cols_model1 <- colnames(as.data.frame(df_model) |> select(-c(STATE, unemployment_rate)))[1:100]
+y_col_model1 <- "unemployment_rate"
+X_cols_model2 <- colnames(df_model)[1:49]
+y_col_model2 <- "unemp_rate_centered"
+
+# getting model 1 using the initial variables and forward selection
+fs_df1 <- forward_selection_linreg(df_model, X_cols_model1, y_col_model1)
+# choosing the optimal model based on aic
+argmin_ind1 <- which.min(fs_df1$aic)
+# generating the formula and creating the model object
+formula1fs <- paste(sort(fs_df1$var[2:argmin_ind1]), collapse = " + ")
+formula1fs <- paste(y_col_model1, '~', formula1fs)
+model1fs <- lm(formula1fs, data = df_model)
+
+# getting model 2 using the initial variables and forward selection
+fs_df2 <- forward_selection_linreg(df_model, X_cols_model2, y_col_model2)
+argmin_ind2 <- which.min(fs_df2$aic)
+formula2fs <- paste(sort(fs_df2$var[2:argmin_ind2]), collapse = " + ")
+formula2fs <- paste(y_col_model2, '~', formula2fs)
+model2fs <- lm(formula2fs, data = df_model)
 ```
+
+Now we have 2 final models. Let us analyse the results and interpretations in the next section
+
+## Interpretation and conclusions
+
+### Interpretation
+
+Let's look at the summary of the models. 
+
+```{r}
+summary(model1fs)
+summary(model2fs)
+```
+
+We can see that in both models the proximity coefficients are close to each other as they should be since the model specifications are similar. The largest coefficient in absolute value among coefficients to the proximity variables is the one to the proximity_to_ARIZONA variable. If taking the second model the interpretation is as follows: if we are in the range 100-300 km from Arizona, if we get exp(1) times closer to Arizona (keeping the same distance from other states or the other states are too far away and keeping the same state where are at) the unemployment rate rises by 0.96 percentage points. The same interpretation applies to other proximity variables, just replace the state and the coefficient value. Overall, there are several significant coefficients to proximity variables, so it can be suggested that the distance to the certain state affects the unemployment which indicates the association between unemployment of the county and the one in the neighbouring state. 
+
+### Visual interpretation
+
+In general, the positive (negative) significant coeffient imply that as we get closer to some state the counties' unemployment on average increases (decreases). Let's check this claim using visualization. Let's first check that for proximity_to_ARIZONA: 
+
+```{r}
+counties_flt <- counties |> 
+  filter(STATE %in% c('CALIFORNIA', 'ARIZONA', 'NEVADA', 'UTAH', 'COLORADO', 'NEW_MEXICO'))
+
+p1 <- geographical_visualizer(counties_flt, 'unemployment_rate')
+p1
+```
+
+As for Arizona, it seems that only in New Mexico the unemployment rises as the counties are closer to Arizona, the unemployment increases. Maybe it's also the case for California, the unemployment there is unstable there in general, so it's hard to tell. So in some states some increase in unemployment with the increase in proximity may be seen, but it's definitely not seen fo the states like Utah and Colorado. For these states unemployment does not rise with the proximity to Arizona. 
+
+Let's take the second example, let's take proximity_to_ARKANSAS which was also one of the largest and it's extremely significant in both models. 
+
+```{r}
+counties_flt2 <- counties |> 
+  filter(STATE %in% c('ARKANSAS', 'OKLAHOMA', 'LOUISIANA', 'MISSOURI', 
+                      'MISSISSIPPI', 'TENNESSEE'))
+
+p2 <- geographical_visualizer(counties_flt2, 'unemployment_rate')
+p2
+```
+Well, as for the Arkansas, it's quite clearly seen that the counties become slightly brighter in Oklahoma, Tennessee (just the border counties become brighter), and Misouri as they get closer to Arkansas. The same can be said for Mississippi. In Lousiana no "Arkansas effect" is observed. So it can be suggested that proximity to Arkansas on average increases the unemployment rate in the counties of the other states. 
+
+### Conclusion
+
+Spatial data analysis was made to estimate the impact of the certain state onto unemployment in the counties of the neighboring states which are close to this certain state. Based on the presence of the significant variables it can be suggested that some states indeed may cause the increase or decrease the unemployment in the nearby counties from the other states. Such analysis can be helpful in the general analysis of the unemployment dynamics in the US. Some other models, panel data (with many periods, to study the dynamics of unemployment) and other spatial data techiques can be potentially used to make a further analysis and more robust results with more specific suggestions on how to control the unemployment rate in the US
+
+
+
+
+
+
+
+
+
+
+
 
