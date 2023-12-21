@@ -24,6 +24,7 @@ library(sf)
 sf_use_s2(FALSE)
 library(ggplot2)
 library(viridis) 
+library(lwgeom)
 ```
 
 
